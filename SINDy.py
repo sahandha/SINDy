@@ -15,9 +15,13 @@ class SINDy:
         self._cutoff    = cutoff
         self._theta     = []
         self._xi        = []
+        self._rx        = []
+
+        print "Initiated a class for Sparse Identification from Numerical Dynamics"
 
     def setDerivative(self,derdata):
-        self._dx = derdata[:,1:];
+        self._dx = derdata[:,1:]
+        print "**** Derivative Set ****"
 
     def PoolData(self,x):
 
@@ -32,12 +36,13 @@ class SINDy:
         return yout
 
     def SparsifyDynamics(self):
+        print "**** Performing regression. Please wait... ****"
         self._xi = np.linalg.lstsq(self._theta,self._dx)
 
         for k in xrange(10):
+            print "\tIteration {} in progress...".format(k)
             self._x[np.abs(self._x)<self._cutoff] = 0
             self._xi = np.linalg.lstsq(self._theta,self._dx)
-
 
     def SparseGalerkin(self,t,y):
         yy = np.array(y).reshape((1,self._dim))
@@ -64,6 +69,7 @@ class SINDy:
 
     def ComputeTheta(self):
         self._theta = self.PoolData(self._x)
+        print "**** Candidate functions library has been created ****"
 
     def ComputeDerivatives(self):
         if self._dx == []:
@@ -72,17 +78,18 @@ class SINDy:
             print "no derivative data provided..."
             print "computing derivatives using ... method..."
 
-
     def SimulateSINDy(self):
+        print "**** Identification is complete. We now use it to simulate the system. ****"
         dt = np.diff(self._t[0:2])[0]
         te = self._t[-1]
-        r = ode(self.SparseGalerkin).set_integrator('dopri5')
+        r = ode(self.SparseGalerkin).set_integrator('dopri5', nsteps=3000)
         r.set_initial_value(self._x[0], self._t[0])
 
         while r.successful() and r.t < te:
-            print (r.t+dt, r.integrate(r.t+dt))
 
-
+            self._rx.append(np.insert(r.integrate(r.t+dt),0,r.t+dt))
+            #print "results are in: ", (r.t+dt, r.integrate(r.t+dt))
+        self._rx = np.array(self._rx)
     def RunSINDy(self):
 
         self.ComputeDerivatives()
@@ -99,6 +106,8 @@ class SINDy:
         plt.figure
         for i in xrange(self._dim):
             plt.plot(self._t,self._x[:,i],label="{}".format(statesymbols[i]))
+
+            plt.plot(self._rx[:,0],self._rx[:,i+1],label="{}".format(statesymbols[i]))
             plt.grid()
             plt.legend(loc=0)
         plt.show()
@@ -107,10 +116,17 @@ class SINDy:
 
 if __name__ == "__main__":
 
-    data  = np.array([[1,.2,3,.3],[2.1,4,5,2],[3,4,6,.6]])
-    ddata = np.array([[2,2,3,4],[3,4,5,3],[3,4,5,1.2]])
+    from SIR import *
 
-    sindy = SINDy(data=data,polyorder=1,usesine=False,cutoff=.5)
-    sindy.setDerivative(ddata)
-    sindy.RunSINDy()
-    #sindy.SINDyPlot(statesymbols=["S","I","R"])
+    sir = SIR(tstart=0, tend=5, dt=.1, beta=3, gamma=2, N=1)
+    sir.Initialize(S0=0.9, I0=0.1, R0=0);
+    sir.Simulate();
+
+
+    data  = np.transpose(np.array([sir._Time, sir._SS, sir._II, sir._RR]))
+    ddata = np.transpose(np.array([sir._Time, sir._dSS, sir._dII, sir._dRR]))
+
+    sin = SINDy(data=data,polyorder=2,usesine=False)
+    sin.setDerivative(ddata)
+    sin.RunSINDy()
+    sin.SINDyPlot(["S","I","R"])
