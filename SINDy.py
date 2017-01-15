@@ -2,9 +2,7 @@ import warnings
 import numpy as np
 from scipy.integrate import ode
 import matplotlib.pyplot as plt
-from progressbar import ProgressBar
-from itertools import combinations
-
+from collections import Counter
 
 class SINDy:
     def __init__(self,data,polyorder=2,usesine=False,cutoff=0.025):
@@ -119,10 +117,9 @@ class SINDy:
         t0 = self._t[0]
         te = self._t[-1]
         r = ode(self.SparseGalerkin).set_integrator('dopri5', nsteps=1000)
-        r.set_initial_value(self._x[0], t0)
-        pbar = ProgressBar()
-        #while r.successful() and r.t < te:
-        for t in pbar(np.arange(t0,te,dt)):
+        r.set_initial_value(np.mean(self._x[0:int(0.1/dt)],axis=0), t0)
+
+        while r.successful() and r.t < te-2*dt: #TODO: figure out a better way to do this.
             self._rx.append(np.insert(r.integrate(r.t+dt),0,r.t+dt))
 
         self._rx = np.array(self._rx)
@@ -168,6 +165,52 @@ class SINDy:
                 self._xi[biginds,ind] = np.linalg.lstsq(self._theta[:,biginds],self._dx[:,ind])[0]
         print ""
 
+    def StringConvolve(self,l1,l2):
+        res = []
+        for i in xrange(len(l1)):
+            for j in xrange(min(i,len(l2)-1),len(l2)):
+                if l1[i] == "1":
+                    res.append(l2[j])
+                else:
+                    res.append(l1[i]+l2[j])
+        return res
+
+    def StringMultFormat(self,str):
+        sortedStr = sorted(str)
+        availablesVars = list(set(sortedStr))
+        counts = Counter(sortedStr)
+
+        rs = ''
+
+        for i in range(len(availablesVars)):
+            power = counts[availablesVars[i]]
+            if power == 1:
+                rs = rs + availablesVars[i] + " "
+            else:
+                rs = rs + availablesVars[i]+"^{} ".format(power)
+        return rs
+
+    def StringTerms(self,strlist):
+        terms = []
+        s1 = "1"
+        for i in self._polyorder:
+            terms.join(self.StringConvolve(s1,strlist))
+            s1 = terms
+
+    def StringModelView(self,StateVariables=[]):
+        terms = []
+        s1 = ["1"]
+        for i in range(self._polyorder):
+            terms += self.StringConvolve(s1,StateVariables)
+            s1 = terms
+        terms = ["1"] + terms
+        for i in xrange(len(StateVariables)):
+            row = "d"+StateVariables[i]+"/dt = " + "{: 2.2f}".format(self._xi[0,i])
+            for j in xrange(1,len(self._xi)):
+                row = row + " + " + "{: 2.2f}".format(self._xi[j,i])+" "+self.StringMultFormat(terms[j])
+            print row
+
+
 if __name__ == "__main__":
 
     from SIR import *
@@ -201,7 +244,9 @@ if __name__ == "__main__":
     '''
     sin = SINDy(data=data,polyorder=2,usesine=False)
     sin.SetDerivative(ddata)
-    sin.RunSINDy(simulate=True)
-    sin.SINDyPlot(statesymbols=["Susceptible","Infected","Recovered"],
-                datacolors=[[0.7, 0.7, 1.0],[1.0, 0.7, 0.7],[0.7, 1.0, 0.7]],
-                simcolors =[[0.0, 0.0, 1.0],[1.0, 0.0, 0.0],[0.0, 1.0, 0.0]])
+    sin.RunSINDy(simulate=False)
+    #sin.SINDyPlot(statesymbols=["Susceptible","Infected","Recovered"],
+    #            datacolors=[[0.8, 0.8, 1.0],[1.0, 0.8, 0.8],[0.8, 1.0, 0.8]],
+    #            simcolors =[[0.0, 0.0, 1.0],[1.0, 0.0, 0.0],[0.0, 1.0, 0.0]])
+
+    sin.StringModelView(["S","I","R"])

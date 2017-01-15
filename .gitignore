@@ -1,4 +1,3 @@
 *.pyc
 .ipynb_checkpoints/
 playground.py
-SIR.py
