@@ -31,42 +31,6 @@ class SINDy:
         self._theta = self.PoolData(self._x)
         print "**** Candidate functions library has been created ****"
 
-    def LeastSquare(self, A, b):
-        num_vars = A.shape[1]
-        rank = A.shape[0] #np.linalg.matrix_rank(A)
-        nonzeros = num_vars*np.shape(b)[1]
-        finalsol = 0
-        print "Rank: ", rank
-        print "Number of variables", num_vars
-        print A.shape[0]
-        if rank == num_vars:
-            print "there is a unique solution"
-            sol = np.linalg.lstsq(A, b)[0]    # not under-determined
-            finalsol = sol
-        elif rank > num_vars:
-            print "Over-determined system"
-            for nz in combinations(range(rank), num_vars):
-                try:
-                    sol = np.zeros((num_vars, np.shape(b)[1]))
-                    sol = np.asarray(np.linalg.solve(A[nz, :], b[nz,:]))
-                    if np.count_nonzero(sol)<nonzeros:
-                        finalsol = sol
-                        nonzeros = np.count_nonzero(sol)
-                except np.linalg.LinAlgError:
-                    pass                    # picked bad variables, can't solve
-        else:
-            print "under-determined system"
-            for nz in combinations(range(num_vars), rank):    # the variables not set to zero
-                try:
-                    sol = np.zeros((num_vars, np.shape(b)[1]))
-                    sol[nz, :] = np.asarray(np.linalg.solve(A[:, nz], b))
-                    if np.count_nonzero(sol)<nonzeros:
-                        finalsol = sol
-                        nonzeros = np.count_nonzero(sol)
-                except np.linalg.LinAlgError:
-                    pass                    # picked bad variables, can't solve
-        return finalsol
-
     def PolyConvolve(self, data1, data2, initialrun=False):
 
         if (np.shape(data1)[0] != np.shape(data2)[0]):
