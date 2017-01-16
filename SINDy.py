@@ -191,26 +191,22 @@ if __name__ == "__main__":
         Add noise to my data
     '''
     import random as rn
-    eps = 0.025
+    eps    = 0.05
+    noise  = eps*np.random.randn(3,sir._Time.shape[0])
+    dnoise = eps*np.random.randn(3,sir._Time.shape[0])
 
-    data  = np.transpose(np.array([sir._Time,
-                               sir._SS + eps*np.random.randn(sir._SS.shape[0]),
-                               sir._II + eps*np.random.randn(sir._SS.shape[0]),
-                               sir._RR + eps*np.random.randn(sir._SS.shape[0])]))
-    ddata = np.transpose(np.array([sir._Time,
-                               sir._dSS + eps*np.random.randn(sir._SS.shape[0]),
-                               sir._dII + eps*np.random.randn(sir._SS.shape[0]),
-                               sir._dRR + eps*np.random.randn(sir._SS.shape[0])]))
+    data  = np.transpose(np.insert(np.array([sir._SS , sir._II , sir._RR]) + noise,0,sir._Time,axis=0))
+    ddata = np.transpose(np.insert(np.array([sir._dSS, sir._dII, sir._dRR])+dnoise,0,sir._Time,axis=0))
 
 
     '''
         Run SINDy
     '''
-    sin = SINDy(data=data,polyorder=2,usesine=False)
+    sin = SINDy(data=data,polyorder=2,usesine=False,cutoff=0.1)
     sin.SetDerivative(ddata)
-    sin.RunSINDy(simulate=False)
-    #sin.SINDyPlot(statesymbols=["Susceptible","Infected","Recovered"],
-    #            datacolors=[[0.8, 0.8, 1.0],[1.0, 0.8, 0.8],[0.8, 1.0, 0.8]],
-    #            simcolors =[[0.0, 0.0, 1.0],[1.0, 0.0, 0.0],[0.0, 1.0, 0.0]])
+    sin.RunSINDy(simulate=True)
+    sin.SINDyPlot(statesymbols=["Susceptible","Infected","Recovered"],
+              datacolors=[[0.8, 0.8, 1.0],[1.0, 0.8, 0.8],[0.8, 1.0, 0.8]],
+              simcolors =[[0.0, 0.0, 1.0],[1.0, 0.0, 0.0],[0.0, 1.0, 0.0]])
 
     sin.StringModelView(["S","I","R"])
