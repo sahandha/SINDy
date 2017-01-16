@@ -56,8 +56,10 @@ class Differentiate:
             self._x[:,i] = filtfilt(b,a,self._x[:,i])
         self.Derive()
 
-    def DerivativePlot(self,fignum=1,labels=[],colors=[]):
+    def DerivativePlot(self,fignum=1,labels=[],colors=[],**kwargs):
         plt.figure(fignum)
+        plt.suptitle(kwargs['title'])
+        plt.subplots_adjust(top=0.85)
         for i in range(self._dim):
             plt.subplot(2,1,1)
             ps = plt.plot(self._t,self._x[:,i],label=labels[i]);
@@ -66,7 +68,10 @@ class Differentiate:
             ps = plt.plot(self._t,self._dx[:,i],label=labels[i]);
             plt.setp(ps, 'Color', colors[i], 'linewidth', 3)
         plt.subplot(2,1,1)
+        plt.ylabel('Data')
         plt.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3,ncol=3, mode="expand", borderaxespad=0.)
         plt.grid(True)
         plt.subplot(2,1,2)
+        plt.ylabel('Derivative Data')
+        plt.xlabel('Time')
         plt.grid(True)
