@@ -88,7 +88,7 @@ class SINDy:
 
         self._rx = np.array(self._rx)
 
-    def SINDyPlot(self, statesymbols=[],datacolors=[],simcolors=[]):
+    def SINDyPlot(self, fignum=1, statesymbols=[],datacolors=[],simcolors=[]):
 
         if len(statesymbols) != self._dim:
             warnings.warn("The number of state symbols don't match the state dimension.")
@@ -97,7 +97,7 @@ class SINDy:
             warnings.warn("The number of color specs don't match the state dimension.")
             datacolors = ['b','r','g']
 
-        plt.figure
+        plt.figure(fignum)
         for i in xrange(self._dim):
             ps = plt.plot(self._t,self._x[:,i],label="{}".format(statesymbols[i]))
             plt.setp(ps, 'Color', datacolors[i], 'linewidth', 3)
@@ -169,9 +169,18 @@ class SINDy:
             s1 = terms
         terms = ["1"] + terms
         for i in xrange(len(StateVariables)):
-            row = "d"+StateVariables[i]+"/dt = " + "{: 2.2f}".format(self._xi[0,i])
+            if self._xi[0,i] > 1e-3:
+                row = "d"+StateVariables[i]+"/dt = " + "{: 2.3f}".format(self._xi[0,i])
+                sp = " + "
+            else:
+                row = "d"+StateVariables[i]+"/dt = "
+                sp = ""
+
             for j in xrange(1,len(self._xi)):
-                row = row + " + " + "{: 2.2f}".format(self._xi[j,i])+" "+self.StringMultFormat(terms[j])
+                ss = "{: 2.2f}".format(self._xi[j,i])
+                if self._xi[j,i]>1e-3:
+                    row = row + sp + "{: 2.3f}".format(self._xi[j,i])+" "+self.StringMultFormat(terms[j])
+                    sp = " + "
             print row
 
 
