@@ -46,6 +46,7 @@ class DataBaseObject:
         p = plt.plot(self._T,np.array(self._S)+np.array(self._P)+np.array(self._I)+np.array(self._R),label="Total")
         plt.setp(p, 'Color', 'k', 'linewidth', 3)
         plt.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3,ncol=3, mode="expand", borderaxespad=0.)
+
 class Differentiate:
     def __init__(self,data,order=1,method='CentralDifference',filter=None):
 
@@ -124,3 +125,4 @@ if __name__ == "__main__":
     db = DataBaseObject(db='sim_v1_1_16_2017')
 
     db.DBPlot()
+    plt.show()
